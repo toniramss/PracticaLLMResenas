@@ -4,13 +4,27 @@ import unicodedata
 
 df7 = pd.read_csv("pruebaResenyas1.csv")
 
+
 datasetEjemploResenas = pd.read_csv("airbnbResenas2.csv")
+
+datasetEjemploResenasNegativas = pd.read_csv("resenasNegativasParte1.csv")
 
 
 datasetPositivas = pd.read_csv("positivas.csv")
 datasetNeutras = pd.read_csv("neutras.csv")
 datasetNegativas = pd.read_csv("negativas.csv")
 
+datasetPositivas = set(
+    datasetPositivas["palabra"].dropna().astype(str).str.lower().str.strip().drop_duplicates() 
+)
+
+datasetNeutras = set(
+    datasetNeutras["palabra"].dropna().astype(str).str.lower().str.strip().drop_duplicates() 
+)
+
+datasetNegativas = set(
+    datasetNegativas["palabra"].dropna().astype(str).str.lower().str.strip().drop_duplicates() 
+)
 
 
 # Convertimos columnas a sets (quitando NaN y espacios)
@@ -32,27 +46,43 @@ def tokenizar(texto: str):
 def clasificar_resena(texto: str):
     tokens = tokenizar(texto)
 
-    score = 0
-    for t in tokens:
-        if t in datasetPositivas:
-            score += 1
-        elif t in datasetNegativas:
-            score -= 1
+    positivas = 0
+    negativas = 0
+    neutras = 0
 
-    if score > 0:
-        return "positiva", score
-    elif score < 0:
-        return "negativa", score
+    for token in tokens:
+        if token in datasetPositivas:
+            positivas += 1
+            print(f"Token '{token}' clasificado como POSITIVO")
+        elif token in datasetNegativas:
+            negativas += 1
+            print(f"Token '{token}' clasificado como NEGATIVO")
+        else:
+            neutras += 1
+            print(f"Token '{token}' clasificado como NEUTRO")
+
+    # Decisión según cantidades
+    if positivas > negativas:
+        clasificacion = "positiva"
+    elif negativas > positivas:
+        clasificacion = "negativa"
     else:
-        return "neutra", score
-    
+        clasificacion = "neutra"
+
+    return clasificacion, positivas, negativas, neutras
+
+
 resenasPositivas = 0
 resenasNeutras = 0
 resenasNegativas = 0
 
-for resena in datasetEjemploResenas["columna_1"].dropna().astype(str):
-    clasificacion, puntaje = clasificar_resena(resena)
-    print(f"Reseña: {resena}\nClasificación: {clasificacion}, Puntaje: {puntaje}\n")
+for resena in datasetEjemploResenasNegativas["columna_2"].dropna().astype(str):
+
+    clasificacion, n_pos, n_neg, n_neu = clasificar_resena(resena)
+
+    print(f"Reseña: {resena}")
+    print(f"Palabras positivas: {n_pos} | Palabras negativas: {n_neg} | Palabras neutras: {n_neu}")
+    print(f"Clasificación: {clasificacion}\n")
 
     if clasificacion == "positiva":
         resenasPositivas += 1
@@ -65,4 +95,3 @@ for resena in datasetEjemploResenas["columna_1"].dropna().astype(str):
 print(f"Total de reseñas positivas: {resenasPositivas}")
 print(f"Total de reseñas neutras: {resenasNeutras}")
 print(f"Total de reseñas negativas: {resenasNegativas}")
-
